@@ -12,6 +12,7 @@ import uk.co.jemos.podam.common.AttributeStrategy;
 import javax.validation.constraints.Email;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Date;
@@ -55,6 +56,10 @@ public class RandomUtils {
             }
             return RandomUtil.randomInt();
         });
+        // BigDecimal：限制精度在 DECIMAL(10,2) 范围内，避免 H2 等数据库溢出
+        PODAM_FACTORY.getStrategy().addOrReplaceTypeManufacturer(BigDecimal.class,
+                (dataProviderStrategy, attributeMetadata, map) ->
+                        BigDecimal.valueOf(RandomUtil.randomInt(0, 10000000), 2));
         // LocalDateTime
         PODAM_FACTORY.getStrategy().addOrReplaceTypeManufacturer(LocalDateTime.class,
                 (dataProviderStrategy, attributeMetadata, map) -> randomLocalDateTime());
@@ -137,6 +142,11 @@ public class RandomUtils {
     @SafeVarargs
     public static <T> List<T> randomPojoList(Class<T> clazz, Consumer<T>... consumers) {
         int size = RandomUtil.randomInt(1, RANDOM_COLLECTION_LENGTH);
+        return randomPojoList(clazz, size, consumers);
+    }
+
+    @SafeVarargs
+    public static <T> List<T> randomPojoList(Class<T> clazz, int size, Consumer<T>... consumers) {
         return Stream.iterate(0, i -> i).limit(size).map(o -> randomPojo(clazz, consumers))
                 .collect(Collectors.toList());
     }
